@@ -43,16 +43,11 @@ var programCode = function (processingInstance) {
         if (this.position.x > window.innerWidth || this.position.x < 0) {
             this.velocity.x = -this.velocity.x
           } 
-         let magX = this.reverseX ? -1 : 1;
-
-
           if (this.position.y > window.innerHeight || this.position.y < 0) {
-            this.reverseY = true;
-          } else if (this.position.y < 0) {
-            this.reverseY = false;
+            this.velocity.y = -this.velocity.y
           }
-          let magY = this.reverseY ? -1 : 1;
-          this.position.add(this.velocity,magX, magY);
+
+          this.position.add(this.velocity);
       }
       collide(other){
         // console.log(dist(this,other))
