@@ -31,23 +31,22 @@ var programCode = function (processingInstance) {
         this.velocity = velocity;
         this.reverseX = false;
         this.reverseY = false;
-
+	this.color = color(random(255), random(255), random(255));
       }
       display() {
         // text(this.position.x, this.position.x,this.position.x)
         ellipse(this.position.x, this.position.y, this.size, this.size);
+	fill(this.color)
       }
 
       move() {
-        if (this.position.x > 1000) {
-            this.reverseX = true;
-          } else if (this.position.x < 0) {
-            this.reverseX = false;
-          }
+        if (this.position.x > window.innerWidth || this.position.x < 0) {
+            this.velocity.x = -this.velocity.x
+          } 
          let magX = this.reverseX ? -1 : 1;
 
 
-          if (this.position.y > 1000) {
+          if (this.position.y > window.innerHeight || this.position.y < 0) {
             this.reverseY = true;
           } else if (this.position.y < 0) {
             this.reverseY = false;
@@ -65,11 +64,11 @@ var programCode = function (processingInstance) {
       }
     }
 
-    v1 = new Vector(10, 0);
+    v1 = new Vector(15, 0);
     d1 = new Vector(100, 500);
     p1 = new Particle(100, d1, v1);
-    v2 = new Vector(5, -2);
-    d2 = new Vector(200, 700);
+    v2 = new Vector(-5, 0);
+    d2 = new Vector(1000, 500);
     p2 = new Particle(100, d2, v2);
     draw = function () {
       background(0, 0, 0);
