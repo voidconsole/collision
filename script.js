@@ -1,12 +1,9 @@
 const root = document.getElementById("canvas")
 root.style.backgroundColor = "black"
-root.style.width = window.outerWidth + "px"
-root.style.height = window.innerHeight + "px"
-root.style.position = "relative"
 
 var index = 0
 function clear() {
-    if (root.children.length > 2) {
+    if (root.children.length > 1) {
         for (let i = 0; i < root.children.length; i++) {
             if (
                 root.children[i].style.zIndex < index - 1 ||
@@ -36,49 +33,24 @@ function ellipse(x, y, lenx, leny, color) {
     s.height = leny + "px"
     s.position = "absolute"
     s.left = x + "px"
-    s.bottom = y + "px" // Flipped the Y-axis
+    s.bottom = y + "px"
     s.borderRadius = "100%"
     s.backgroundColor = color
     root.appendChild(div)
 }
-var triangulate = function (colliders) {
-    for (let i = 0; i < colliders.length; i++) {
-        colliders[i].display()
-        colliders[i].move()
-        if (i + 1 == colliders.length) {
-            colliders[i].collide(colliders[0])
-        } else {
-            for (let j = i + 1; j < colliders.length; j++) {
-                colliders[i].collide(colliders[j])
-            }
-        }
-    }
-}
 class Vector {
-    constructor(x, y, m = 1) {
+    constructor(x, y) {
         this.x = x
         this.y = y
-        this.m = m
     }
-    divi(v, magX = 1, magY = 1) {
-        this.x = (this.x / v.x) * this.m * magX
-        this.y = (this.y / v.y) * this.m * magY
+
+    add(v) {
+        this.x += v.x
+        this.y += v.y
     }
-    add(v, magX = 1, magY = 1) {
-        this.x += v.x * this.m * magX
-        this.y += v.y * this.m * magY
-    }
-    sub(v, magX = 1, magY = 1) {
-        this.x -= v.x * this.m * magX
-        this.y -= v.y * this.m * magY
-    }
-    handleCollision(rel) {
-        this.x = -(this.x - rel.x)
-        this.y = -(this.y - rel.y)
-    }
-    inverse = () => new Vector(-this.x, -this.y, this.m)
-    copy() {
-        return new Vector(this.x, this.y, this.m)
+    sub(v) {
+        this.x -= v.x
+        this.y -= v.y
     }
 }
 function dist(a, b) {
@@ -88,6 +60,7 @@ function dist(a, b) {
             (1 / 2)
     )
 }
+
 class Particle {
     constructor(size, position, velocity) {
         this.size = size
@@ -108,61 +81,85 @@ class Particle {
     }
 
     move() {
-        if (this.position.x > window.innerWidth || this.position.x < 0) {
+        if (this.position.x > root.clientWidth || this.position.x < 0) {
             this.velocity.x = -this.velocity.x
         }
-        if (this.position.y > window.innerHeight || this.position.y < 0) {
+        if (this.position.y > root.clientHeight || this.position.y < 0) {
             this.velocity.y = -this.velocity.y
         }
-
         this.position.add(this.velocity)
     }
     collide(other) {
-        if (dist(this, other) < this.size / 2 + other.size / 2) {
+        if (dist(this, other) <= this.size / 2 + other.size / 2) {
+            var normal = new Vector(
+                (other.position.x - this.position.x) /
+                    Math.hypot(
+                        other.position.x - this.position.x,
+                        other.position.y - this.position.y
+                    ),
+                (other.position.y - this.position.y) /
+                    Math.hypot(
+                        other.position.x - this.position.x,
+                        other.position.y - this.position.y
+                    )
+            )
+            var relative = new Vector(
+                this.velocity.x - other.velocity.x,
+                this.velocity.y - other.velocity.y
+            )
+            var influence = relative.x * normal.x + relative.y * normal.y
+
+            var delta = new Vector(influence * normal.x, influence * normal.y)
+
+            this.velocity.sub(delta)
+            other.velocity.add(delta)
             console.log("Collide")
-            console.log(
-                "Before:",
-                this.velocity.x,
-                other.velocity.x,
-                `net: ${this.velocity.x + other.velocity.x}`
-            )
-            let rel = {
-                x: this.velocity.x + other.velocity.x,
-                y: this.velocity.y + other.velocity.y,
-            }
-            this.velocity.handleCollision(rel)
-            other.velocity.handleCollision(rel)
-            console.log(
-                "After:",
-                this.velocity.x,
-                other.velocity.x,
-                `net: ${this.velocity.x + other.velocity.x}`
-            )
         }
     }
 }
 
-v1 = new Vector(15, 0)
-d1 = new Vector(100, 500)
-p1 = new Particle(100, d1, v1)
-v2 = new Vector(0, 0)
-d2 = new Vector(400, 500)
-p2 = new Particle(100, d2, v2)
-v3 = new Vector(0, 0)
-d3 = new Vector(600, 500)
-p3 = new Particle(100, d3, v3)
-v4 = new Vector(0, 0)
-d4 = new Vector(900, 500)
-p4 = new Particle(100, d4, v4)
-v5 = new Vector(0, 0)
-d5 = new Vector(1100, 500)
-p5 = new Particle(100, d5, v5)
+var triangulate = function (colliders) {
+    for (let i = 0; i < colliders.length; i++) {
+        colliders[i].display()
+        colliders[i].move()
+        if (i + 1 == colliders.length) {
+            colliders[i].collide(colliders[0])
+        } else {
+            for (let j = i + 1; j < colliders.length; j++) {
+                // if (dist(colliders[i], colliders[j]) <= colliders[i].size / 2 + colliders[j].size / 2) {
+                colliders[i].collide(colliders[j])
+                //     }
+            }
+        }
+    }
+}
+
+function createParticle(size, position, velocity) {
+    return new Particle(size, position, velocity)
+}
+
+const particles = []
+for (let i = 0; i < 3; i++) {
+    const size = 200
+    var scale = 10
+    const position = new Vector(
+        Math.random() * root.clientWidth,
+        Math.random() * root.clientHeight
+    )
+    const velocity = new Vector(
+        Math.random() * scale * 2 - scale, 
+        Math.random() * scale * 2 - scale
+    )
+    particles.push(createParticle(size, position, velocity))
+}
 draw = function () {
     background(0, 0, 0)
-    triangulate([p1, p2, p3, p4, p5])
+    triangulate(particles)
+    background(0, 0, 0)
     index += 1
     index = index % 1000
     clear()
+    requestAnimationFrame(draw)
 }
 
-setInterval(draw, 30)
+draw()
