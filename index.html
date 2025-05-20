@@ -2,38 +2,78 @@
 <html>
 
 <head>
-	<meta charset="utf-8">
-	<title>Fluid Simulator</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<style>
-		html,
-		body {
-			margin: 0;
-			padding: 0;
-			height: 100%;
-			width: 100%;
-			overflow: hidden;
-		}
+    <meta charset="utf-8">
+    <title>Fluid Simulator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
 
-		#canvas {
-			position: fixed;
-			top: 0;
-			left: 0;
-			background-color: black;
-			width: 100vw;
-			height: 100vh;
-		}
-	</style>
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: black;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #quant {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background-color: rgba(255, 255, 255, 0.089);
+	    color: white;
+            z-index: 10000;
+            margin: 0.5em;
+            padding: 0.5em;
+            border-radius: 200px;
+	    border: 1px solid rgba(255, 255, 255, 0.199);
+            font-family: Helvetica, sans-serif;
+        }
+	#quant ::checkmark{
+		border-radius: 100%;
+	}
+    </style>
 </head>
 
 <body>
-	<div id="canvas">
+    <div id="canvas"></div>
 
-	</div>
-	</div>
+    <div id="quant">
+        <label>
+            <input id="quantBox" type="checkbox" />
+            Quantum Mode
+        </label>
+    </div>
+
+    <script>
+        const checkBox = document.getElementById("quantBox");
+
+        // When the checkbox changes, store the new value and reload page
+        checkBox.addEventListener("change", () => {
+            sessionStorage.setItem('quantumMode', checkBox.checked);
+            location.reload(); // Reload to apply the script swap
+        });
+
+        // On load: set checkbox from sessionStorage and load the correct script
+        window.addEventListener('DOMContentLoaded', () => {
+            const isQuantum = sessionStorage.getItem('quantumMode') === 'true';
+            checkBox.checked = isQuantum;
+            loadScript(isQuantum ? 'scriptQ.js' : 'script.js');
+        });
+
+        function loadScript(src) {
+            const script = document.createElement('script');
+            script.src = src;
+            script.defer = true;
+            document.body.appendChild(script);
+        }
+    </script>
 </body>
-<script src="script.js">
-
-</script>
-
 </html>
