@@ -217,6 +217,6 @@ It’s **not** hardcoded behavior. The quantum version is just a different funct
 
 ## 🧠 Final Thoughts
 
-This project is minimal and expressive. The core is real physics with manually managed DOM, yet when you enable Quantum Mode... something else takes over. Something that shouldn't work... but does.
+This project is minimal and expressive. The core is real physics with manually managed DOM, yet when you enable Quantum Mode... something else takes over. Something that shouldn't work... but does. Perhaps, classic JavaScript magic.
 
-> *Physics isn't just equations—it's magic that happens to work.*
+> *Physics isn't just equations; it's magic that happens to work.*
