@@ -1,31 +1,14 @@
-# 🧪 Particle Collision (No Canvas!)
+# Collision Engine
 
-Welcome to a physics playground where classical collisions meet spooky side-effects—all without using `<canvas>`. Everything you see is built from scratch, using **vanilla JS**, pure **DOM manipulation**, and a sprinkle of vector math.
-
-> *No libraries. No canvas. Just divs pretending to be particles. And somehow\... it works.*
+A 2D particle collision simulator built without `<canvas>`. Particles are rendered as plain `<div>` elements, all physics is computed manually, and nothing from any graphics or physics library is used, just vanilla JS, DOM manipulation, and vector math.
 
 ---
 
-## 🔬 What This Is
+## How It Works
 
-This repo contains a basic 2D particle simulator that visualizes **elastic collisions** between multiple spherical particles.
+### Vector Math
 
-* Particles are rendered as `<div>` elements.
-* All physics is done manually: **position**, **velocity**, and **collision response**—nothing from any graphics or physics library.
-* A mysterious **Quantum Mode** exists, which seems to trigger bizarre, emergent behaviors like:
-
-  * Multi-body gravity
-  * Angular momentum
-  * Entanglement-like effects
-    ...despite no code being written for any of that. Yeah, I don’t get it either. Probably haunted.
-
----
-
-## ⚙️ How It Works (The Classical Part)
-
-### 🧮 Vector Math
-
-A minimal `Vector` class handles 2D vector arithmetic:
+A minimal `Vector` class handles all 2D arithmetic used for both position and velocity:
 
 ```js
 class Vector {
@@ -35,13 +18,9 @@ class Vector {
 }
 ```
 
-Used for both position and velocity updates.
+### DOM-Based Rendering
 
----
-
-### 🧱 DOM-Based Rendering (No Canvas)
-
-Instead of canvas, each particle is just a `<div>` styled into a circle:
+Each particle is an absolutely-positioned `<div>` styled into a circle. Position is updated every frame by mutating `style.left` and `style.bottom` directly:
 
 ```js
 function ellipse(x, y, width, height, color) {
@@ -60,13 +39,11 @@ function ellipse(x, y, width, height, color) {
 }
 ```
 
-This makes the simulation visible with pure HTML/CSS—perfect for environments that don’t support or allow canvas.
+This works in any environment that can render HTML, including ones where `<canvas>` is restricted or unavailable.
 
----
+### Memory Management
 
-### 🧼 Memory Management (`clear()` function)
-
-Since we’re creating hundreds of DOM nodes (divs) every second, we need to **clean them up** regularly or the DOM would choke.
+Since a new `<div>` is created per particle per frame, the DOM would grow unbounded without cleanup. The `clear()` function prunes stale nodes using `z-index` as a proxy for age, any element whose index falls outside the current frame's active range gets removed:
 
 ```js
 function clear() {
@@ -79,64 +56,42 @@ function clear() {
 }
 ```
 
-It removes `div` elements whose `z-index` is out of the current animation frame’s range. This keeps memory and DOM size under control.
+This keeps DOM size and memory usage stable over time.
 
----
+### Movement and Boundary Collisions
 
-### 🌀 Particle Movement and Bouncing
-
-Particles bounce off the edges by inverting their velocity:
+Particles update position by adding velocity each frame, and bounce off walls by negating the relevant velocity component:
 
 ```js
 if (this.position.x > width || this.position.x < 0) {
     this.velocity.x *= -1;
 }
-```
 
-Then they move by updating position with velocity:
-
-```js
 this.position.add(this.velocity);
 ```
 
----
+### Elastic Collision Resolution
 
-### 🎯 Collision Detection & Resolution
-
-Distance between particles is computed via:
+Distance between two particles is computed with `Math.hypot`. When that distance falls below the sum of their radii, a standard elastic collision is resolved along the collision normal:
 
 ```js
-function dist(a, b) {
-    return Math.hypot(a.position.x - b.position.x, a.position.y - b.position.y);
-}
-```
-
-If they collide (i.e., distance < sum of radii), we resolve it like a textbook **1D elastic collision along the normal**:
-
-```js
-// get unit normal vector
+// unit normal vector between centers
 var normal = new Vector(...);
-// get relative velocity
+// relative velocity of the two particles
 var relative = new Vector(this.velocity.x - other.velocity.x, ...);
 // project relative velocity onto the normal
 var influence = relative.x * normal.x + relative.y * normal.y;
-// modify both velocities
+// apply equal and opposite impulse to both particles
 var delta = new Vector(influence * normal.x, influence * normal.y);
 this.velocity.sub(delta);
 other.velocity.add(delta);
 ```
 
-This adheres to conservation of momentum and kinetic energy—**true elastic collision behavior**.
+This conserves both momentum and kinetic energy, giving physically accurate elastic behavior.
 
----
+### Core Loop
 
-### 🔁 `triangulate()` – The Core Loop
-
-Each frame, we:
-
-1. Display each particle.
-2. Move it.
-3. Check and resolve collisions with every other particle.
+Each frame, `triangulate()` iterates all particles, displays and moves each one, then checks collisions against every subsequent particle. Using the upper triangle (`j > i`) avoids checking each pair twice:
 
 ```js
 for (let i = 0; i < colliders.length; i++) {
@@ -148,18 +103,9 @@ for (let i = 0; i < colliders.length; i++) {
 }
 ```
 
-Only upper triangle of combinations is checked (`i < j`), avoiding duplicate checks.
+### Draw Loop
 
----
-
-### 📽️ Drawing Loop
-
-A `draw()` function runs every frame using `requestAnimationFrame`. It:
-
-* Draws a background layer (just a black full-screen div),
-* Runs `triangulate()` to move and render particles,
-* Increments `zIndex` to manage layering,
-* Calls `clear()` to remove old DOM elements.
+`draw()` runs every frame via `requestAnimationFrame`. It renders a background layer, runs `triangulate()`, increments the `z-index` counter for frame tracking, and calls `clear()`:
 
 ```js
 function draw() {
@@ -174,49 +120,28 @@ function draw() {
 
 ---
 
-## 🤯 Quantum Mode
+## Quantum Mode
 
-When enabled via the checkbox toggle, it loads `scriptQ.js` instead of `script.js`. From the outside, it’s just this:
+The quantum toggle swaps `script.js` for `scriptQ.js` at runtime, that's the entire change:
 
 ```js
 loadScript(isQuantum ? 'scriptQ.js' : 'script.js');
 ```
 
-Literally one line changed. No deeper rewrite. No nested changes. Just a different entry point. Check the code yourself if you don't trust me.
-
-But somehow… that single switch causes:
-
-* Spooky quantum entanglement–like syncing,
-* Emergent angular momentum and stable orbits,
-* Multi-body gravitational pull,
-* Strange accuracy, as if it's **doing physics we didn’t even code**.
-
-It’s **not** hardcoded behavior. The quantum version is just a different function being called from the outside—yet what it unleashes feels like simulation from another dimension. Emergence? Chaos? Glitch in the matrix? Who knows. But it’s *real weird* and *I didn't plan it*.
+The alternate script produces noticeably different emergent behavior: what looks like multi-body gravity, stable orbits, and synchronized particle movement, none of which is explicitly implemented in the classical version. It's the same collision framework, different entry point. Worth exploring if you want to understand how small behavioral differences can produce dramatically different macroscopic results.
 
 ---
+## Future updates
 
-## 📦 File Structure
-
-| File         | Purpose                        |
-| ------------ | ------------------------------ |
-| `index.html` | Setup, HTML UI, quantum toggle |
-| `script.js`  | Core classical collision logic |
-| `scriptQ.js` | Alternate "quantum" behavior   |
-
+- To consider mass and size factors
+- To take into account friction, inelasticity and drag
+- To support collision of arbitary shapes
+- To improve efficiency by drawing grids and checking for collision with particles only in the local box.
 ---
 
-## 🚫 Requirements Met
+## Notes
 
-* ❌ No Canvas
-* ❌ No Libraries
-* ✅ Pure JS + HTML
-* ✅ Physically accurate elastic collisions
-* ✅ Works in basic browser environments
-
----
-
-## 🧠 Final Thoughts
-
-This project is minimal and expressive. The core is real physics with manually managed DOM, yet when you enable Quantum Mode... something else takes over. Something that shouldn't work... but does. Perhaps, classic JavaScript magic.
-
-> *Physics isn't just equations; it's magic that happens to work.*
+- No dependencies, no build step, runs in any modern browser
+- Physics assumes equal-mass particles; no friction or rotational dynamics
+- Collision detection is O(n²), not designed for large particle counts
+- No `<canvas>`, no libraries; pure JS and HTML throughout
